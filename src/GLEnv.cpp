@@ -1,6 +1,6 @@
-#include "GLEnv.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <GLEnv/GLEnv.h>
 #include <iostream>
 void processInput(GLFWwindow *window)
 {
@@ -8,6 +8,7 @@ void processInput(GLFWwindow *window)
     {
         glfwSetWindowShouldClose(window, true);
         glfwTerminate();
+        exit(0);
     }
 }
 
