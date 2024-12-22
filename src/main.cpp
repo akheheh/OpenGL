@@ -32,8 +32,9 @@ const char *fragmentShaderSource = R"(
     #version 330 core
     in vec4 fragmentColor;
     out vec4 pixelColor;
+    uniform float time;
     void main() {
-        pixelColor = fragmentColor;
+        pixelColor = vec4(fragmentColor.r, fragmentColor.g + sin(time), fragmentColor.b, 1.0f);
     }
 )";
 
@@ -54,11 +55,60 @@ int main()
         1.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f,
         0.0f, 0.0f, 1.0f};
+    
+    float triangle1[] = {
+        -0.75f, 0.0f, 0.0f,
+        -0.5f, 0.7f, 0.0f,
+        -0.25f, 0.0f, 0.0f,
+
+        1.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 1.0f
+    };
+
+    float triangle2[] = {
+        0.25f, 0.0f, 0.0f,
+        0.5f, 0.75f, 0.0f,
+        0.75f, 0.0f, 0.0f,
+
+        0.0f, 0.0f, 1.0f,
+        0.25f, 0.0f, 0.25f,
+        1.0f, 0.0f, 0.0f
+    };
 
     // Create and bind the Vertex Array
     GLuint VAO;
     glGenVertexArrays(1, &VAO);
 
+    //Create 2 different VAOs for each triangle
+    GLuint VAOs[2];
+    glGenVertexArrays(2, VAOs);
+    glBindVertexArray(VAOs[0]);
+
+    GLuint VBOs[2];
+
+    glGenBuffers(2, VBOs);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle1), triangle1, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)(0));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) (9 * sizeof(float)));
+    
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    
+
+    glBindVertexArray(VAOs[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle2), triangle2, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)(0));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) (9 * sizeof(float)));
+    
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+
+    /*
     glBindVertexArray(VAO);
 
     // Create and bind the Vertex Buffer
@@ -76,7 +126,7 @@ int main()
     // Turn on the attribute
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
-
+    */
     // Create a vertex shader, fragment shader, and a shader program
     GLuint vertexShader, fragmentShader, shaderProgram;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -103,6 +153,8 @@ int main()
     std::cout << vec.x << vec.y << vec.z << std::endl;
     */
 
+   int timeLoc = glGetUniformLocation(shaderProgram, "time");
+
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
@@ -110,7 +162,11 @@ int main()
 
         // Draw the triangle
         glUseProgram(shaderProgram);
-        glBindVertexArray(VAO);
+        float timeValue = glfwGetTime();
+        glUniform1f(timeLoc, timeValue);
+        glBindVertexArray(VAOs[0]);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindVertexArray(VAOs[1]);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
         glfwSwapBuffers(window);
