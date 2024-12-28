@@ -19,11 +19,11 @@ struct VIEW
 const char *vertexShaderSource = R"(
     #version 330 core
     layout (location = 0) in vec3 vertex;
-    layout (location = 1) in vec3 vertexColor;
+    layout (location = 1) in vec3 vColor;
     out vec4 fragmentColor;
     void main() {
         gl_Position = vec4(vertex, 1.0f);
-        fragmentColor = vec4(vertexColor, 1.0f);
+        fragmentColor = vec4(vColor, 1.0f);
     }
 )";
 
@@ -32,9 +32,8 @@ const char *fragmentShaderSource = R"(
     #version 330 core
     in vec4 fragmentColor;
     out vec4 pixelColor;
-    uniform float time;
     void main() {
-        pixelColor = vec4(fragmentColor.r, fragmentColor.g + sin(time), fragmentColor.b, 1.0f);
+        pixelColor = fragmentColor;
     }
 )";
 
@@ -49,86 +48,39 @@ int main()
 
     // vertex data
     float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f, 0.5f, 0.0f,
-        1.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 1.0f};
-    
-    float triangle1[] = {
-        -0.75f, 0.0f, 0.0f,
-        -0.5f, 0.7f, 0.0f,
-        -0.25f, 0.0f, 0.0f,
+        -0.5f,
+        -0.5f,
+        0.0f,
+        0.5f,
+        -0.5f,
+        0.0f,
+        0.0f,
+        0.75f,
+        0.0f,
 
-        1.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 1.0f
+        0.75f,
+        0.25f,
+        0.0f,
+        0.5f,
+        -0.5f,
+        0.0f,
+        0.0f,
+        0.75f,
+        0.0f,
     };
 
-    float triangle2[] = {
-        0.25f, 0.0f, 0.0f,
-        0.5f, 0.75f, 0.0f,
-        0.75f, 0.0f, 0.0f,
+    float colors[] = {
+        0.282f, 0.239f, 0.545f,
+        0.282f, 0.239f, 0.545f,
+        0.282f, 0.239f, 0.545f,
 
-        0.0f, 0.0f, 1.0f,
-        0.25f, 0.0f, 0.25f,
-        1.0f, 0.0f, 0.0f
-    };
+        0.482f, 0.408f, 0.933f,
+        0.482f, 0.408f, 0.933f,
+        0.482f, 0.408f, 0.933f};
 
-    // Create and bind the Vertex Array
-    GLuint VAO;
-    glGenVertexArrays(1, &VAO);
-
-    //Create 2 different VAOs for each triangle
-    GLuint VAOs[2];
-    glGenVertexArrays(2, VAOs);
-    glBindVertexArray(VAOs[0]);
-
-    GLuint VBOs[2];
-
-    glGenBuffers(2, VBOs);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle1), triangle1, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)(0));
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) (9 * sizeof(float)));
-    
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    
-
-    glBindVertexArray(VAOs[1]);
-    glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle2), triangle2, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)(0));
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *) (9 * sizeof(float)));
-    
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-
-    /*
-    glBindVertexArray(VAO);
-
-    // Create and bind the Vertex Buffer
-    GLuint VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    // Load vertext data into the vertex buffer
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // Tell the Vertex Array how to read data for the given attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)(0));
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)(9 * sizeof(float)));
-
-    // Turn on the attribute
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    */
-    // Create a vertex shader, fragment shader, and a shader program
+    // create shaders and a shader program
     GLuint vertexShader, fragmentShader, shaderProgram;
+
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     shaderProgram = glCreateProgram();
@@ -143,17 +95,32 @@ int main()
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
 
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    // Create and bind a VAO, create, bind and load a buffer, set up attribute configurations
+    GLuint VAO, VBO;
+    GLuint colorBO;
+
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &colorBO);
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)(0));
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, colorBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void *)(0));
+    glEnableVertexAttribArray(1);
+
+    // Call it once, resize callback will call it again with resize dimensions
     glViewport(0, 0, WIDTH, HEIGHT);
-
-    /*
-    glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
-    glm::mat4 trans = glm::mat4(1.0f);
-    trans = glm::translate(trans, glm::vec3(1.0f, 1.0f, 0.0f));
-    vec = trans * vec;
-    std::cout << vec.x << vec.y << vec.z << std::endl;
-    */
-
-   int timeLoc = glGetUniformLocation(shaderProgram, "time");
 
     while (!glfwWindowShouldClose(window))
     {
@@ -162,13 +129,8 @@ int main()
 
         // Draw the triangle
         glUseProgram(shaderProgram);
-        float timeValue = glfwGetTime();
-        glUniform1f(timeLoc, timeValue);
-        glBindVertexArray(VAOs[0]);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindVertexArray(VAOs[1]);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 6);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
