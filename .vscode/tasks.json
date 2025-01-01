@@ -13,6 +13,7 @@
                 "${workspaceFolder}/src/main.cpp",
                 "${workspaceFolder}/src/GLEnv.cpp",
                 "${workspaceFolder}/src/glad.c",
+                "${workspaceFolder}/src/stb_image.cpp",
                 "-lglfw3dll",
                 "-o",
                 "${workspaceFolder}/main.exe"
