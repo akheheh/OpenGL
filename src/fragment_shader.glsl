@@ -2,6 +2,7 @@
 //texture coordinate input, output from vertex shader
 in vec2 textureCoordOutput;
 in vec4 fragmentColor;
+uniform float time;
 out vec4 pixelColor;
 
 /*
@@ -17,7 +18,18 @@ then there are issues:
 7.) Then, we use the GLSL texture() function which retrieve texture coordinates from a texture
 */
 
-uniform sampler2D aTexture;
+uniform sampler2D texture1;
+uniform sampler2D texture2;
 void main() {
-    pixelColor = texture(aTexture, textureCoordOutput);
+    //pixelColor = texture(texture1, textureCoordOutput);
+    //To use multiple textures, we use the GLSL mix() function
+    /*
+    mix(val1, val2, inclination)
+    inclination is within [0, 1]
+    If 0, then the result will be 100% of val1 and 0% of val2
+    If 1.0, then the result will be 100% of val2 and 0% of val1
+    Anything in between is a mix: e.g. 0.77 means 77% val2, 23% val1
+    Likewise, 0.25 means 75% val1, 25% val2
+    */
+    pixelColor = mix(texture(texture1, textureCoordOutput), texture(texture2, textureCoordOutput), (sin(time * 2.5) + 1.0) * 0.25f);
 }
