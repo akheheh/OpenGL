@@ -171,12 +171,15 @@ int main()
     // Apply the translation matrix to the vector
     vec = translate * vec;
     std::cout << vec.x << vec.y << vec.z << "\n";
-
+    double mouseX, mouseY;
+    mouseX = 0;
+    mouseY = 0;
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
         GLGeneralSetup(window, CLEAR_COLOR);
-
+        
+        glfwGetCursorPos(window, &mouseX, &mouseY);
         // Draw the triangle
         // a_Shader.use();
         // Draw with multiple textures:
@@ -189,6 +192,7 @@ int main()
         // Make the matrix a rotation matrix.  Rotate by radian equivalent of 90degrees, the second argument is which access to rotate
         // Rotate around the x, y, and z axis
         // Modifying for animation rotation
+        rotateScale = glm::translate(rotateScale, glm::vec3((mouseX - (float) (WIDTH)) / (2.0 * (float) (WIDTH)), (mouseY - (float) (HEIGHT)) / (2.0 * (float)(HEIGHT)), 0.0));
         rotateScale = glm::rotate(rotateScale, time, glm::vec3(1.0f, 1.0f, 1.0f));
         // Scale
         // Apply a scale matrix to the matrix (can apply to previously applied matrices)
