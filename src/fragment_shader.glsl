@@ -31,5 +31,5 @@ void main() {
     Anything in between is a mix: e.g. 0.77 means 77% val2, 23% val1
     Likewise, 0.25 means 75% val1, 25% val2
     */
-    pixelColor = mix(texture(texture1, textureCoordOutput), texture(texture2, textureCoordOutput), (sin(time * 2.5) + 1.0) * 0.25f);
+    pixelColor = mix(texture(texture1, textureCoordOutput), texture(texture2, textureCoordOutput), (sin(time) + 1.0f) * 0.5f);
 }
