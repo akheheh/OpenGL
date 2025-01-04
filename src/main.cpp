@@ -198,7 +198,6 @@ int main()
 
         // Get the transform uniform and update the value to use the transform matrix
         GLuint transformLoc = glGetUniformLocation(a_Shader.ID, "transform");
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(rotateScale));
         // Uniform of type 4d float matrix
         /*glUniformMatrix4v(
             uniform_location,
@@ -206,11 +205,15 @@ int main()
             Transpose the matrix boolean,
             Matrix data to send: use GLM function value_ptr(matrix) to send the matrix data to OpenGL
         )*/
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(rotateScale));
+        // Updating time uniform for texture animation
         glUniform1f(timeLoc, time);
+        // Activate and bind texture units
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureObj);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, textureObj2);
+        // Note, VAOs manage vertex data, textures are not vertex data, no need to bind VAO before textures
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glfwSwapBuffers(window);
