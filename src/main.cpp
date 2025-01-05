@@ -28,7 +28,7 @@ auto [WIDTH, HEIGHT, CLEAR_COLOR] = GLView;
 
 int main()
 {
-    GLFWwindow *window = createOpenGLEnv(1920, 1080, "GL");
+    GLFWwindow *window = createOpenGLEnv(WIDTH, HEIGHT, "GL");
 
     // Make a shader program
     Shader a_Shader("vertex_shader.glsl", "fragment_shader.glsl");
@@ -173,10 +173,23 @@ int main()
     std::cout << vec.x << vec.y << vec.z << "\n";
     double mouseX, mouseY;
     double normalizedX, normalizedY;
-    mouseX = 0;
-    mouseY = 0;
+
+    // Model matrix, rotate the object so it's like it's on a surface
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::rotate(model, glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+    // View matrix, move it slightly back so it's in view
+    // Equivalently, move the scene forwards
+    glm::mat4 view = glm::mat4(1.0f);
+    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+    // Projection matrix, use perspective projection
+    glm::mat4 projection;
+    projection = glm::perspective(glm::radians(-45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
     while (!glfwWindowShouldClose(window))
     {
+        mouseX = 0;
+        mouseY = 0;
         processInput(window);
         GLGeneralSetup(window, CLEAR_COLOR);
         glfwGetCursorPos(window, &mouseX, &mouseY);
@@ -188,22 +201,25 @@ int main()
         // Activate texture unit, bind texture object
         float time = glfwGetTime();
         // scale factor for the scaling matrix
-        float scaleFactor = (sin(time) + 1.75f) * 0.5f;
+        // float scaleFactor = (sin(time) + 1.75f) * 0.5f;
         // Scale and rotate
         glm::mat4 rotateScale = glm::mat4(1.0f);
         // Make the matrix a rotation matrix.  Rotate by radian equivalent of 90degrees, the second argument is which access to rotate
         // Rotate around the x, y, and z axis
         // Modifying for animation rotation
-        rotateScale = glm::translate(rotateScale, glm::vec3(normalizedX, normalizedY, 0.0));
-        rotateScale = glm::rotate(rotateScale, time, glm::vec3(0.0, 0.0, 1.0f));
+        rotateScale = glm::translate(rotateScale, glm::vec3(-1.0f * normalizedX, -1.0f * normalizedY, 0.0));
+        rotateScale = glm::rotate(rotateScale, time, glm::vec3(0, 0, 1));
         // Scale
         // Apply a scale matrix to the matrix (can apply to previously applied matrices)
         // The second argument is a vector of scaling factors for each axis.
         // Uniform scaling by scale factor
-        rotateScale = glm::scale(rotateScale, glm::vec3(scaleFactor, scaleFactor, 1.0));
+        // rotateScale = glm::scale(rotateScale, glm::vec3(scaleFactor, scaleFactor, 1.0));
 
         // Get the transform uniform and update the value to use the transform matrix
         GLuint transformLoc = glGetUniformLocation(a_Shader.ID, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(rotateScale));
+
+        GLuint modelLoc = glGetUniformLocation(a_Shader.ID, "model");
         // Uniform of type 4d float matrix
         /*glUniformMatrix4v(
             uniform_location,
@@ -211,7 +227,13 @@ int main()
             Transpose the matrix boolean,
             Matrix data to send: use GLM function value_ptr(matrix) to send the matrix data to OpenGL
         )*/
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(rotateScale));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+        GLuint viewLoc = glGetUniformLocation(a_Shader.ID, "view");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+        GLuint projectionLoc = glGetUniformLocation(a_Shader.ID, "projection");
+        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
         // Updating time uniform for texture animation
         glUniform1f(timeLoc, time);
         // Activate and bind texture units
