@@ -172,14 +172,16 @@ int main()
     vec = translate * vec;
     std::cout << vec.x << vec.y << vec.z << "\n";
     double mouseX, mouseY;
+    double normalizedX, normalizedY;
     mouseX = 0;
     mouseY = 0;
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
         GLGeneralSetup(window, CLEAR_COLOR);
-        
         glfwGetCursorPos(window, &mouseX, &mouseY);
+        normalizedX = -1.0 + 2.0 * mouseX / (double)WIDTH;
+        normalizedY = 1.0 - 2.0 * mouseY / (double)HEIGHT;
         // Draw the triangle
         // a_Shader.use();
         // Draw with multiple textures:
@@ -192,13 +194,13 @@ int main()
         // Make the matrix a rotation matrix.  Rotate by radian equivalent of 90degrees, the second argument is which access to rotate
         // Rotate around the x, y, and z axis
         // Modifying for animation rotation
-        rotateScale = glm::translate(rotateScale, glm::vec3((mouseX - (float) (WIDTH)) / (2.0 * (float) (WIDTH)), (mouseY - (float) (HEIGHT)) / (2.0 * (float)(HEIGHT)), 0.0));
-        rotateScale = glm::rotate(rotateScale, time, glm::vec3(1.0f, 1.0f, 1.0f));
+        rotateScale = glm::translate(rotateScale, glm::vec3(normalizedX, normalizedY, 0.0));
+        rotateScale = glm::rotate(rotateScale, time, glm::vec3(0.0, 0.0, 1.0f));
         // Scale
         // Apply a scale matrix to the matrix (can apply to previously applied matrices)
         // The second argument is a vector of scaling factors for each axis.
         // Uniform scaling by scale factor
-        rotateScale = glm::scale(rotateScale, glm::vec3(scaleFactor, scaleFactor, scaleFactor));
+        rotateScale = glm::scale(rotateScale, glm::vec3(scaleFactor, scaleFactor, 1.0));
 
         // Get the transform uniform and update the value to use the transform matrix
         GLuint transformLoc = glGetUniformLocation(a_Shader.ID, "transform");
