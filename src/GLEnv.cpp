@@ -35,6 +35,8 @@ GLFWwindow *createOpenGLEnv(const int width, const int height, const char *windo
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create a window object
+    //Create a monitor object for fullscreen, otherwise NULL
+    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     GLFWwindow *window = glfwCreateWindow(width, height, windowTitle, NULL, NULL);
 
     // Error handling

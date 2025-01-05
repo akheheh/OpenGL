@@ -34,13 +34,20 @@ int main()
     Shader a_Shader("vertex_shader.glsl", "fragment_shader.glsl");
     // Call it once, resize callback will call it again with resize dimensions
 
-    // Make a VAO and VBO
-    GLuint VAO, VBO;
+    // Make a VAO, VBO, and index buffer object aka Element Buffer Object aka EBO
+    GLuint VAO, VBO, indexBuffer;
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
-    // Vertex data: vertex coordinates, texture coordinates
+    // Vertex data: vertex coordinates, vertex colors, texture coordinates
+    /*float vertexData[] = {
+        // Positions         //Colors            //Texture coordinates
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,   // top right
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom left
+        -0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f}; // top left
+    */
     float vertexData[] = {
         -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
         0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
@@ -83,11 +90,17 @@ int main()
         0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
         -0.5f, 0.5f, 0.5f, 0.0f, 0.0f,
         -0.5f, 0.5f, -0.5f, 0.0f, 1.0f};
+    GLuint indexArray[] = {
+        0, 1, 3,
+        1, 2, 3};
 
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
 
+    glGenBuffers(1, &indexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexArray), indexArray, GL_STATIC_DRAW);
 
     // Load our texture
     int width, height, colorChannels;
@@ -98,10 +111,18 @@ int main()
     // Make a GL texture object
     GLuint textureObj;
     glGenTextures(1, &textureObj);
-    //Activate texture unit 0
+
+    // Using multiple textures
+    // Texture unit: the location value of a texture
+    // OpenGL supports at least 16 texture units
+    // The default active texture unit value is 0
+    // First activate a texture unit
     glActiveTexture(GL_TEXTURE0);
 
-    // Bind to GL_TEXURE_2D, which is itself linked to the active texture unit
+    // Bind to GL_TEXURE_2D
+    /*After activating a texture unit, glBindTexture() will bind the
+    texture object to the currently active texture unit*/
+    // For example, it binds GL_TEXTURE0 to the textureObj texture object
     glBindTexture(GL_TEXTURE_2D, textureObj);
 
     // load texture data to the texture object binding
@@ -146,19 +167,29 @@ int main()
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData2);
     }
-    
+    // Set texture wrapping for each axis of a texture: clamp to edge for S, mirror repeat for T
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    // If we want to use GL_CLAMP_TO_BORDER, then use glTextParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    // float color[]{0.0f, 0.0f, 1.0f, 0.0f};
+    // glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
+
     // Texture filtering
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     // texture cleanup
     stbi_image_free(textureData);
-    stbi_image_free(textureData2);
+
+    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(0));
+    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
+    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(0));
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
 
     glEnableVertexAttribArray(0);
+    // glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
 
     // Z-buffer to track what goes in front of what
@@ -168,18 +199,32 @@ int main()
     glViewport(0, 0, WIDTH, HEIGHT);
     glEnable(GL_DEPTH_TEST);
     // Clear the depth buffer
-    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT), done in the GLEnv function;
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     a_Shader.use();
     int timeLoc = glGetUniformLocation(a_Shader.ID, "time");
+    // Tell OpenGL which texture unit each texture sampler belongs to
+    // Can also use the shader class setInt() but use glGetUniformLocation() for now
+    // For example, a_Shader.setInt("texture1", 0)
+    // Read as: glUniform1i(getLocationOfFirstSampler, set it to texture unit 0)
+
     glUniform1i(glGetUniformLocation(a_Shader.ID, "texture1"), 0);
     // Likewise, glUniform1i(getLocationOfSecondSampler, set it to texture unit 1)
     glUniform1i(glGetUniformLocation(a_Shader.ID, "texture2"), 1);
+    // a_Shader.setInt("texture1,", 0);
+    // a_Shader.setInt("texture2", 1);
 
-    //Get mouse coordinates for mouse translation
+    // Matrix transformations
+    // a 3D vector in homogeneous 4D coordinates
+    glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
+    // a translation matrix which is initialized as an identity matrix, again 3D in homogeneous 4D
+    glm::mat4 translate = glm::mat4(1.0f);
+    // Set the translate matrix to translate x and y by 1
+    translate = glm::translate(translate, glm::vec3(1.0f, 1.0f, 0.0f));
+    // Apply the translation matrix to the vector
+    vec = translate * vec;
+    std::cout << vec.x << vec.y << vec.z << "\n";
     double mouseX, mouseY;
     double normalizedX, normalizedY;
-
-    //Make the model, view and projection matrix for 3D 
 
     // Model matrix, rotate the object so it's like it's on a surface
     glm::mat4 model = glm::mat4(1.0f);
@@ -193,41 +238,47 @@ int main()
     // Projection matrix, use perspective projection
     glm::mat4 projection;
     projection = glm::perspective(glm::radians(-45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
-
-    //Render loop
     while (!glfwWindowShouldClose(window))
     {
-        //Set the mouse coordinates to 0 at initialization
         mouseX = 0;
         mouseY = 0;
-
-        //General stuff
         processInput(window);
         GLGeneralSetup(window, CLEAR_COLOR);
-
-        //get the mouse coordinates
         glfwGetCursorPos(window, &mouseX, &mouseY);
-
-        //Convert the mouse coordinates to NDC for interaction
         normalizedX = -1.0 + 2.0 * mouseX / (double)WIDTH;
         normalizedY = 1.0 - 2.0 * mouseY / (double)HEIGHT;
-        
-        //Get the current time
+        // Draw the triangle
+        // a_Shader.use();
+        // Draw with multiple textures:
+        // Activate texture unit, bind texture object
         float time = glfwGetTime();
+        // scale factor for the scaling matrix
+        // float scaleFactor = (sin(time) + 1.75f) * 0.5f;
+        // Scale and rotate
+        glm::mat4 rotateScale = glm::mat4(1.0f);
+        // Make the matrix a rotation matrix.  Rotate by radian equivalent of 90degrees, the second argument is which access to rotate
+        // Rotate around the x, y, and z axis
+        // Modifying for animation rotation
+        rotateScale = glm::translate(rotateScale, glm::vec3(-1.0f * normalizedX, -1.0f * normalizedY, 0.0));
+        rotateScale = glm::rotate(rotateScale, time, glm::vec3(0, 0, 1));
+        // Scale
+        // Apply a scale matrix to the matrix (can apply to previously applied matrices)
+        // The second argument is a vector of scaling factors for each axis.
+        // Uniform scaling by scale factor
+        // rotateScale = glm::scale(rotateScale, glm::vec3(scaleFactor, scaleFactor, 1.0));
 
-        //A transformation matrix for animating the object:
-        //Matrix translation using mouse coordinates
-        //Matrix rotation using time value, along the Z axis
-        glm::mat4 transformationMatrix = glm::mat4(1.0f);
-        transformationMatrix = glm::translate(transformationMatrix, glm::vec3(-1.0f * normalizedX, -1.0f * normalizedY, 0.0));
-        transformationMatrix = glm::rotate(transformationMatrix, time, glm::vec3(0, 0, 1));
-
-        //Update the transform matrix uniform with the GLM matrix
+        // Get the transform uniform and update the value to use the transform matrix
         GLuint transformLoc = glGetUniformLocation(a_Shader.ID, "transform");
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transformationMatrix));
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(rotateScale));
 
-        //Update the model, view and projection matrix uniforms with their GLM matrix
         GLuint modelLoc = glGetUniformLocation(a_Shader.ID, "model");
+        // Uniform of type 4d float matrix
+        /*glUniformMatrix4v(
+            uniform_location,
+            how many matrices to send,
+            Transpose the matrix boolean,
+            Matrix data to send: use GLM function value_ptr(matrix) to send the matrix data to OpenGL
+        )*/
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
         GLuint viewLoc = glGetUniformLocation(a_Shader.ID, "view");
@@ -235,7 +286,6 @@ int main()
 
         GLuint projectionLoc = glGetUniformLocation(a_Shader.ID, "projection");
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
         // Updating time uniform for texture animation
         glUniform1f(timeLoc, time);
         // Activate and bind texture units
@@ -243,14 +293,10 @@ int main()
         glBindTexture(GL_TEXTURE_2D, textureObj);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, textureObj2);
-        
-        //Bind the VAO
+        // Note, VAOs manage vertex data, textures are not vertex data, no need to bind VAO before textures
         glBindVertexArray(VAO);
-
-        //Draw the object
+        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        //General stuff
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
