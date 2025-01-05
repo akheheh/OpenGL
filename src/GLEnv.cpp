@@ -60,9 +60,9 @@ GLFWwindow *createOpenGLEnv(const int width, const int height, const char *windo
     return window;
 }
 
-// Set the clear color
+// Set the clear color and clear color and z buffers
 void GLGeneralSetup(GLFWwindow *window, float *clearColor)
 {
     glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
