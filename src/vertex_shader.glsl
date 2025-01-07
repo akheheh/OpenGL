@@ -21,7 +21,7 @@ void main() {
     gl_Position = projection * view * model * transform * vec4(v_Loc, 1.0f);
     fragmentColor = vec4(v_Col, 1.0f);
     //set texture coordinate output
-    textureCoordOutput = textureCoordInput;
+    textureCoordOutput = vec2(textureCoordInput.s + (3.0f * sin(0.5f * time) + 1) * 0.5f, textureCoordInput.t + ( 3.2f * cos(0.25f * time) + 1) * 0.5f);
     //textureCoordOutput = textureCoordInput;
     
 }

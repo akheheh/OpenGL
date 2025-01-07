@@ -8,6 +8,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <cmath>
+#include <bit>
+#include <cstdint>
 /*
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -34,60 +36,74 @@ int main()
     Shader a_Shader("vertex_shader.glsl", "fragment_shader.glsl");
     // Call it once, resize callback will call it again with resize dimensions
 
-    // Make a VAO and VBO
-    GLuint VAO, VBO;
+    // Make a VAO, VBO and index buffer
+    GLuint VAO, VBO, EBO;
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
     // Vertex data: vertex coordinates, texture coordinates
     float vertexData[] = {
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+        // position           // texture coords
+        // Front face
+        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f,   // 0
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,  // 1
+        0.5f, -0.5f, 0.5f, 1.0f, 0.0f,   // 2
+        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,    // 3
+                                         // Right face
+        0.5f, 0.5f, 0.5f, 0.0f, 1.0f,    // 4
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f,   // 5
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f,  // 6
+        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,   // 7
+                                         // Back face
+        0.5f, 0.5f, -0.5f, 0.0f, 1.0f,   // 8
+        0.5f, -0.5f, -0.5f, 0.0f, 0.0f,  // 9
+        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, // 10
+        -0.5f, 0.5f, -0.5f, 1.0f, 1.0f,  // 11
+        // Left face
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,  // 12
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // 13
+        -0.5f, -0.5f, 0.5f, 1.0f, 0.0f,  // 14
+        -0.5f, 0.5f, 0.5f, 1.0f, 1.0f,   // 15
+        // Bottom face
+        -0.5f, -0.5f, 0.5f, 0.0f, 1.0f,  // 16
+        0.5f, -0.5f, 0.5f, 1.0f, 1.0f,   // 17
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f,  // 18
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, // 19
+        // Top face
+        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, // 20
+        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,  // 21
+        0.5f, 0.5f, -0.5f, 1.0f, 0.0f, // 22
+        -0.5f, 0.5f, -0.5f, 0.0f, 0.0f // 23
+    };
 
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-
-        -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        -0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        -0.5f, 0.5f, 0.5f, 0.0f, 0.0f,
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f};
+    GLuint indexArray[]{
+        // Front face
+        0, 1, 2,
+        2, 3, 0,
+        // Right face
+        4, 5, 6,
+        6, 7, 4,
+        // Back face
+        8, 9, 10,
+        10, 11, 8,
+        // Left face
+        12, 13, 14,
+        14, 15, 12,
+        // Bottom face
+        16, 17, 18,
+        18, 19, 16,
+        // Top face
+        20, 21, 22,
+        22, 23, 20};
 
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
 
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexArray), indexArray, GL_STATIC_DRAW);
 
     // Load our texture
     int width, height, colorChannels;
@@ -98,7 +114,7 @@ int main()
     // Make a GL texture object
     GLuint textureObj;
     glGenTextures(1, &textureObj);
-    //Activate texture unit 0
+    // Activate texture unit 0
     glActiveTexture(GL_TEXTURE0);
 
     // Bind to GL_TEXURE_2D, which is itself linked to the active texture unit
@@ -146,7 +162,7 @@ int main()
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, textureData2);
     }
-    
+
     // Texture filtering
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -155,8 +171,8 @@ int main()
     stbi_image_free(textureData);
     stbi_image_free(textureData2);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(0));
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void *>(0));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), reinterpret_cast<void *>(3 * sizeof(float)));
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(2);
@@ -175,11 +191,11 @@ int main()
     // Likewise, glUniform1i(getLocationOfSecondSampler, set it to texture unit 1)
     glUniform1i(glGetUniformLocation(a_Shader.ID, "texture2"), 1);
 
-    //Get mouse coordinates for mouse translation
+    // Get mouse coordinates for mouse translation
     double mouseX, mouseY;
     double normalizedX, normalizedY;
 
-    //Make the model, view and projection matrix for 3D 
+    // Make the model, view and projection matrix for 3D
 
     // Model matrix, rotate the object so it's like it's on a surface
     glm::mat4 model = glm::mat4(1.0f);
@@ -194,39 +210,39 @@ int main()
     glm::mat4 projection;
     projection = glm::perspective(glm::radians(-45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 
-    //Render loop
+    // Render loop
     while (!glfwWindowShouldClose(window))
     {
-        //Set the mouse coordinates to 0 at initialization
+        // Set the mouse coordinates to 0 at initialization
         mouseX = 0;
         mouseY = 0;
 
-        //General stuff
+        // General stuff
         processInput(window);
         GLGeneralSetup(window, CLEAR_COLOR);
 
-        //get the mouse coordinates
+        // get the mouse coordinates
         glfwGetCursorPos(window, &mouseX, &mouseY);
 
-        //Convert the mouse coordinates to NDC for interaction
+        // Convert the mouse coordinates to NDC for interaction
         normalizedX = -1.0 + 2.0 * mouseX / (double)WIDTH;
         normalizedY = 1.0 - 2.0 * mouseY / (double)HEIGHT;
-        
-        //Get the current time
+
+        // Get the current time
         float time = glfwGetTime();
 
-        //A transformation matrix for animating the object:
-        //Matrix translation using mouse coordinates
-        //Matrix rotation using time value, along the Z axis
+        // A transformation matrix for animating the object:
+        // Matrix translation using mouse coordinates
+        // Matrix rotation using time value, along the Z axis
         glm::mat4 transformationMatrix = glm::mat4(1.0f);
         transformationMatrix = glm::translate(transformationMatrix, glm::vec3(-1.0f * normalizedX, -1.0f * normalizedY, 0.0));
         transformationMatrix = glm::rotate(transformationMatrix, time, glm::vec3(0, 0, 1));
 
-        //Update the transform matrix uniform with the GLM matrix
+        // Update the transform matrix uniform with the GLM matrix
         GLuint transformLoc = glGetUniformLocation(a_Shader.ID, "transform");
         glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transformationMatrix));
 
-        //Update the model, view and projection matrix uniforms with their GLM matrix
+        // Update the model, view and projection matrix uniforms with their GLM matrix
         GLuint modelLoc = glGetUniformLocation(a_Shader.ID, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
@@ -243,14 +259,14 @@ int main()
         glBindTexture(GL_TEXTURE_2D, textureObj);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, textureObj2);
-        
-        //Bind the VAO
+
+        // Bind the VAO
         glBindVertexArray(VAO);
 
-        //Draw the object
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        // Draw the object
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
-        //General stuff
+        // General stuff
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
